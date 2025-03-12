@@ -1,2 +1,2 @@
 # Ignorer tout le dossier tmp et son contenu
-data/tmp/
+#data/tmp/
