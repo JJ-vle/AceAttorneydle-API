@@ -89,6 +89,41 @@ let gamePriority = {
 
 ///////////////////// 
 
+const QUEUE_FILE = './data/tmp/gameQueues.json';
+
+// Sauvegarder dans un fichier
+function saveQueuesToFile() {
+    const dir = './data/tmp';
+
+    // Vérifie si le dossier existe, sinon le crée
+    if (!fs.existsSync(dir)) {
+        console.log("📁 Dossier 'tmp' non trouvé. Création...");
+        fs.mkdirSync(dir, { recursive: true });
+    }
+
+    try {
+        fs.writeFileSync(QUEUE_FILE, JSON.stringify(gameQueues));
+        console.log("✅ Sauvegarde des files d'attente réussie.");
+    } catch (error) {
+        console.error("❌ Erreur lors de la sauvegarde des files d'attente :", error);
+    }
+}
+
+// Charger depuis le fichier (ou réinitialiser si non trouvé)
+function loadQueuesFromFile() {
+    if (fs.existsSync(QUEUE_FILE)) {
+        gameQueues = JSON.parse(fs.readFileSync(QUEUE_FILE));
+    } else {
+        initializeQueues();
+        saveQueuesToFile();
+    }
+}
+
+// Charger les files d'attente au démarrage
+loadQueuesFromFile();
+
+///////////////////// 
+
 function shufflePriorities() {
     Object.keys(gamePriority).forEach(mode => {
         shuffleArray(gamePriority[mode]);
@@ -121,7 +156,6 @@ function getGroupByTurnabout(turnabout) {
     return null;
 }
 
-// Initialisation des files d'attente
 function initializeQueues() {
     ['Main', 'Investigation', 'Great'].forEach(group => {
         gameQueues.guess[group] = validateListCharacters(filterByGroup(characterData, group), "guess");
@@ -140,19 +174,17 @@ function initializeQueues() {
     shufflePriorities();
     //console.log(gamePriority.guess);
 }
-initializeQueues();
+//initializeQueues();
 
-// Fonction pour retirer le premier élément des files d'attente
+// Modifier rotateQueues pour sauvegarder les données
 function rotateQueues() {
     shufflePriorities();
     Object.keys(gameQueues).forEach(mode => {
         Object.keys(gameQueues[mode]).forEach(group => {
             if (gameQueues[mode][group].length > 0) {
                 gameQueues[mode][group].shift();
-                //console.log(`${mode} - ${group}     ` + gameQueues[mode][group][0].name);
             }
             if (gameQueues[mode][group].length === 0) {
-                //console.log(`🔄 Recharge de la liste ${mode} - ${group}`);
                 gameQueues[mode][group] = filterByGroup(
                     mode === 'quote' ? quoteData : mode === 'case' ? casesData : characterData,
                     group
@@ -161,6 +193,7 @@ function rotateQueues() {
             }
         });
     });
+    saveQueuesToFile();
     console.log("🔄 Rotation des files d'attente effectuée.");
 }
 
