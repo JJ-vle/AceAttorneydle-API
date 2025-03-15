@@ -198,7 +198,7 @@ function rotateQueues() {
 }
 
 // Supprime le premier élément toutes les 5 minutes
-setInterval(rotateQueues, 5 * 60 * 1000);
+//setInterval(rotateQueues, 5 * 60 * 1000);
 
 //////////////////////////// API
 
@@ -280,7 +280,7 @@ app.get('/', (req, res) => {
 });
 
 //////////////////////////// MIDNIGHT ROTATION
-/*
+
 const cron = require('node-cron');
 
 // Exécuter la rotation des files d'attente tous les jours à minuit
@@ -288,5 +288,5 @@ cron.schedule('0 0 * * *', () => {
     console.log("🌙 Minuit ! Rotation des personnages...");
     rotateQueues();
 });
-*/
+
 ////////////////////////////
