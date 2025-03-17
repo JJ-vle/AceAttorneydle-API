@@ -279,8 +279,20 @@ app.get('/', (req, res) => {
     res.send('Server ON');
 });
 
-//////////////////////////// MIDNIGHT ROTATION
+app.get('/api/rotatequeues', (req, res) => {
+    const apiKey = req.headers['x-api-key'];
 
+    if (apiKey !== process.env.CRON_API_KEY) {
+        return res.status(403).send('Forbidden');
+    }
+
+    rotateQueues();
+    res.send('QUEUES ROTATED');
+});
+
+
+//////////////////////////// MIDNIGHT ROTATION
+/*
 const cron = require('node-cron');
 
 // Exécuter la rotation des files d'attente tous les jours à minuit
@@ -288,5 +300,5 @@ cron.schedule('0 0 * * *', () => {
     console.log("🌙 Minuit ! Rotation des personnages...");
     rotateQueues();
 });
-
+*/
 ////////////////////////////
