@@ -1,12 +1,37 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
-const fs = require('fs');
+const mongoose = require('mongoose');
+
 const app = express();
 
-// Configuration pour utiliser CORS
+// Configuration pour utiliser CORS et BodyParser
 app.use(cors());
 app.use(bodyParser.json());
+
+///////////////////// MONGO DB CONNECTION
+
+mongoose.connect(process.env.MONGO_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+}).then(() => console.log("✅ Connecté à MongoDB"))
+  .catch(err => console.error("❌ Erreur de connexion à MongoDB :", err));
+
+///////////////////// MONGO DB SCHEMAS
+
+const gameQueueSchema = new mongoose.Schema({
+    mode: String,
+    queues: Object,
+});
+
+const gamePrioritySchema = new mongoose.Schema({
+    mode: String,
+    priority: { type: Object },
+});
+
+const GameQueue = mongoose.model('GameQueue', gameQueueSchema);
+const GamePriority = mongoose.model('GamePriority', gamePrioritySchema);
 
 ///////////////////// VALID ITEMS
 
@@ -87,40 +112,75 @@ let gamePriority = {
     case: ["Main", "Investigation", "Great"]
 };
 
-///////////////////// 
+///////////////////// DATABASE FUNCTIONS
 
-const QUEUE_FILE = './data/tmp/gameQueues.json';
-
-// Sauvegarder dans un fichier
-function saveQueuesToFile() {
-    const dir = './data/tmp';
-
-    // Vérifie si le dossier existe, sinon le crée
-    if (!fs.existsSync(dir)) {
-        console.log("📁 Dossier 'tmp' non trouvé. Création...");
-        fs.mkdirSync(dir, { recursive: true });
-    }
-
+// Sauvegarde les files d'attente dans MongoDB en supprimant l'ancienne version avant
+async function saveQueuesToDB() {
     try {
-        fs.writeFileSync(QUEUE_FILE, JSON.stringify(gameQueues));
-        console.log("✅ Sauvegarde des files d'attente réussie.");
+        await GameQueue.deleteOne({ mode: "global" });
+
+        const newQueueData = new GameQueue({
+            mode: "global",
+            queues: gameQueues
+        });
+
+        await newQueueData.save();
+        console.log("✅ Files d'attente sauvegardées dans MongoDB.");
     } catch (error) {
         console.error("❌ Erreur lors de la sauvegarde des files d'attente :", error);
     }
 }
 
-// Charger depuis le fichier (ou réinitialiser si non trouvé)
-function loadQueuesFromFile() {
-    if (fs.existsSync(QUEUE_FILE)) {
-        gameQueues = JSON.parse(fs.readFileSync(QUEUE_FILE));
-    } else {
-        initializeQueues();
-        saveQueuesToFile();
+// Charge les files d'attente depuis MongoDB
+async function loadQueuesFromDB() {
+    try {
+        const queuesData = await GameQueue.findOne({ mode: "global" });
+        if (queuesData) {
+            gameQueues = queuesData.queues;
+        } else {
+            initializeQueues();
+            saveQueuesToDB();
+        }
+    } catch (error) {
+        console.error("❌ Erreur lors du chargement des files d'attente :", error);
     }
 }
 
-// Charger les files d'attente au démarrage
-loadQueuesFromFile();
+loadQueuesFromDB();
+
+// Sauvegarde des priorités dans MongoDB
+async function savePrioritiesToDB() {
+    try {
+        await GamePriority.deleteOne({ mode: "global" });
+
+        // Convertir l'objet en tableau de chaînes JSON
+        const newPriorityData = new GamePriority({
+            mode: "global",
+            priority: [JSON.stringify(gamePriority)]
+        });
+
+        await newPriorityData.save();
+        console.log("✅ Priorités sauvegardées dans MongoDB.");
+    } catch (error) {
+        console.error("❌ Erreur lors de la sauvegarde des priorités :", error);
+    }
+}
+
+// Charge les priorités depuis MongoDB
+async function loadPrioritiesFromDB() {
+    try {
+        const priorityData = await GamePriority.findOne({ mode: "global" });
+        if (priorityData && priorityData.priority.length > 0) {
+            gamePriority = JSON.parse(priorityData.priority[0]);
+        } else {
+            savePrioritiesToDB();
+        }
+    } catch (error) {
+        console.error("❌ Erreur lors du chargement des priorités :", error);
+    }
+}
+
+loadPrioritiesFromDB();
 
 ///////////////////// 
 
@@ -128,6 +188,8 @@ function shufflePriorities() {
     Object.keys(gamePriority).forEach(mode => {
         shuffleArray(gamePriority[mode]);
     });
+
+    savePrioritiesToDB();
 }
 function shuffleArray(array) {
     for (let i = array.length - 1; i > 0; i--) {
@@ -177,7 +239,7 @@ function initializeQueues() {
 //initializeQueues();
 
 // Modifier rotateQueues pour sauvegarder les données
-function rotateQueues() {
+async function rotateQueues() {
     shufflePriorities();
     Object.keys(gameQueues).forEach(mode => {
         Object.keys(gameQueues[mode]).forEach(group => {
@@ -185,15 +247,12 @@ function rotateQueues() {
                 gameQueues[mode][group].shift();
             }
             if (gameQueues[mode][group].length === 0) {
-                gameQueues[mode][group] = filterByGroup(
-                    mode === 'quote' ? quoteData : mode === 'case' ? casesData : characterData,
-                    group
-                );
+                gameQueues[mode][group] = characterData;
                 shuffleArray(gameQueues[mode][group]);
             }
         });
     });
-    saveQueuesToFile();
+    await saveQueuesToDB();
     console.log("🔄 Rotation des files d'attente effectuée.");
 }
 
