@@ -247,7 +247,7 @@ async function rotateQueues() {
                 gameQueues[mode][group].shift();
             }
             if (gameQueues[mode][group].length === 0) {
-                gameQueues[mode][group] = characterData;
+                gameQueues[mode][group] = [...characterData];
                 shuffleArray(gameQueues[mode][group]);
             }
         });
