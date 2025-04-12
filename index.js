@@ -357,6 +357,17 @@ app.get('/api/rotatequeues', (req, res) => {
     res.send('QUEUES ROTATED');
 });
 
+app.get('/api/rebuild-queues', (req, res) => {
+    const apiKey = req.headers['x-api-key'];
+    if (apiKey !== process.env.CRON_API_KEY) {
+        return res.status(403).send('Forbidden');
+    }
+
+    initializeQueues();
+    saveQueuesToDB();
+    res.send('QUEUES FULLY REBUILT');
+});
+
 
 //////////////////////////// MIDNIGHT ROTATION
 /*
