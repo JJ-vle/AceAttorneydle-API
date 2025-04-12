@@ -247,14 +247,22 @@ async function rotateQueues() {
                 gameQueues[mode][group].shift();
             }
             if (gameQueues[mode][group].length === 0) {
-                gameQueues[mode][group] = [...characterData];
+                if (mode === "case") {
+                    gameQueues[mode][group] = validateListCases(filterByGroup(casesData, group, true));
+                } else if (mode === "quote") {
+                    gameQueues[mode][group] = filterQuoteByGroup(quoteData, group);
+                } else {
+                    gameQueues[mode][group] = validateListCharacters(filterByGroup(characterData, group), mode);
+                }
                 shuffleArray(gameQueues[mode][group]);
             }
+            
         });
     });
     await saveQueuesToDB();
     console.log("🔄 Rotation des files d'attente effectuée.");
 }
+
 
 // Supprime le premier élément toutes les 5 minutes
 //setInterval(rotateQueues, 5 * 60 * 1000);
