@@ -146,6 +146,10 @@ async function loadQueuesFromDB() {
                 if (!gameQueues[mode]) gameQueues[mode] = {};
                 
                 groups.forEach(group => {
+                    if (!gameQueues[mode][group]) {
+                        gameQueues[mode][group] = [];
+                    }
+
                     if (!Array.isArray(gameQueues[mode][group]) || gameQueues[mode][group].length === 0) {
                         console.log(`⚠️ File vide ou absente détectée : ${mode} > ${group} → Reconstruction...`);
                         
