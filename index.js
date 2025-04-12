@@ -135,12 +135,41 @@ async function saveQueuesToDB() {
 async function loadQueuesFromDB() {
     try {
         const queuesData = await GameQueue.findOne({ mode: "global" });
-        if (queuesData) {
+
+        if (queuesData && queuesData.queues) {
             gameQueues = queuesData.queues;
+
+            const groups = ['Main', 'Investigation', 'Great'];
+            const modes = ['guess', 'silhouette', 'quote', 'case'];
+
+            modes.forEach(mode => {
+                if (!gameQueues[mode]) gameQueues[mode] = {};
+                
+                groups.forEach(group => {
+                    if (!Array.isArray(gameQueues[mode][group]) || gameQueues[mode][group].length === 0) {
+                        console.log(`⚠️ File vide ou absente détectée : ${mode} > ${group} → Reconstruction...`);
+                        
+                        // Reconstruction ciblée
+                        if (mode === "case") {
+                            gameQueues[mode][group] = validateListCases(filterByGroup(casesData, group, true));
+                        } else if (mode === "quote") {
+                            gameQueues[mode][group] = filterQuoteByGroup(quoteData, group);
+                        } else {
+                            gameQueues[mode][group] = validateListCharacters(filterByGroup(characterData, group), mode);
+                        }
+
+                        shuffleArray(gameQueues[mode][group]);
+                    }
+                });
+            });
+
+            await saveQueuesToDB(); // Sauvegarde l’état mis à jour
         } else {
+            console.log("🆕 Aucune file trouvée, initialisation complète.");
             initializeQueues();
             saveQueuesToDB();
         }
+
     } catch (error) {
         console.error("❌ Erreur lors du chargement des files d'attente :", error);
     }
@@ -219,22 +248,37 @@ function getGroupByTurnabout(turnabout) {
 }
 
 function initializeQueues() {
-    ['Main', 'Investigation', 'Great'].forEach(group => {
+    const modes = ['guess', 'silhouette', 'quote', 'case'];
+    const groups = ['Main', 'Investigation', 'Great'];
+
+    // Réinitialise complètement la structure
+    gameQueues = {
+        guess: {},
+        silhouette: {},
+        quote: {},
+        case: {}
+    };
+
+    groups.forEach(group => {
+        // guess
         gameQueues.guess[group] = validateListCharacters(filterByGroup(characterData, group), "guess");
         shuffleArray(gameQueues.guess[group]);
-        
+
+        // silhouette
         gameQueues.silhouette[group] = validateListCharacters(filterByGroup(characterData, group), "silhouette");
         shuffleArray(gameQueues.silhouette[group]);
-        
+
+        // quote
         gameQueues.quote[group] = filterQuoteByGroup(quoteData, group);
         shuffleArray(gameQueues.quote[group]);
-        
+
+        // case
         gameQueues.case[group] = validateListCases(filterByGroup(casesData, group, true));
         shuffleArray(gameQueues.case[group]);
     });
+
     console.log("✅ Files d'attente initialisées et mélangées.");
     shufflePriorities();
-    //console.log(gamePriority.guess);
 }
 //initializeQueues();
 
