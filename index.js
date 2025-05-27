@@ -91,7 +91,8 @@ function validateListCases(data) {
 let turnaboutGames = require('./data/turnabouts.json');
 let characterData = require('./data/aceattorneychars.json');
 characterData = characterData.filter(character => isValidCharacter(character, "guess"));
-let quoteData = require('./data/quotes.json');
+let rawQuoteData = require('./data/quotes.json');
+let quoteData = validateAndFixQuotes(rawQuoteData, characterData);
 let casesData = require('./data/cases.json');
 casesData = casesData.filter(character => isValidCase(character));
 
@@ -298,8 +299,9 @@ async function rotateQueues() {
                 if (mode === "case") {
                     gameQueues[mode][group] = validateListCases(filterByGroup(casesData, group, true));
                 } else if (mode === "quote") {
-                    gameQueues[mode][group] = filterQuoteByGroup(quoteData, group);
-                } else {
+                    const rawQuotes = filterQuoteByGroup(quoteData, group);
+                    gameQueues[mode][group] = validateAndFixQuotes(rawQuotes, characterData);
+                }  else {
                     gameQueues[mode][group] = validateListCharacters(filterByGroup(characterData, group), mode);
                 }
                 shuffleArray(gameQueues[mode][group]);
@@ -314,6 +316,31 @@ async function rotateQueues() {
 
 // Supprime le premier élément toutes les 5 minutes
 //setInterval(rotateQueues, 5 * 60 * 1000);
+
+////////// QUOTE VERIF
+
+function validateAndFixQuotes(quotes, characters) {
+    return quotes.filter(quote => {
+        const speakerName = quote.speaker;
+
+        // Recherche du personnage par nom exact (anglais)
+        const exactMatch = characters.find(char => char.name.toLowerCase() === speakerName.toLowerCase());
+        if (exactMatch) return true;
+
+        // Recherche dans les noms français
+        const frenchMatch = characters.find(char =>
+            Array.isArray(char.french) && char.french.some(fr => fr.toLowerCase() === speakerName.toLowerCase())
+        );
+
+        if (frenchMatch) {
+            quote.speaker = frenchMatch.name;
+            return true;
+        }
+
+        // Quote invalide si aucun match trouvé
+        return false;
+    });
+}
 
 //////////////////////////// API
 
@@ -415,7 +442,6 @@ app.get('/api/rebuild-queues', (req, res) => {
     saveQueuesToDB();
     res.send('QUEUES FULLY REBUILT');
 });
-
 
 //////////////////////////// MIDNIGHT ROTATION
 /*
