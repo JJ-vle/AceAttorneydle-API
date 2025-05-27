@@ -372,6 +372,39 @@ function validateAndFixQuotes(quotes, characters) {
 
 //////////////////////////// API
 
+// get random item with mode and optional filter
+app.get('/api/random-item/:mode/:filter?', (req, res) => {
+    const { mode, filter } = req.params;
+
+    if (!gameQueues[mode] || !gamePriority[mode]) {
+        return res.status(400).json({ error: "Mode invalide" });
+    }
+
+    let selectedItem = null;
+
+    // Liste des groupes à vérifier
+    let filtersToCheck = filter ? filter.split(',') : gamePriority[mode];
+
+    // Trier les groupes selon leur priorité
+    filtersToCheck.sort((a, b) => gamePriority[mode].indexOf(a) - gamePriority[mode].indexOf(b));
+
+    // Chercher un groupe avec des éléments valides
+    for (let group of filtersToCheck) {
+        const queue = gameQueues[mode][group];
+        if (Array.isArray(queue) && queue.length > 0) {
+            const randomIndex = Math.floor(Math.random() * queue.length);
+            selectedItem = queue[randomIndex];
+            break;
+        }
+    }
+
+    if (!selectedItem) {
+        return res.status(500).json({ error: "Aucun élément disponible" });
+    }
+
+    res.json(selectedItem);
+});
+
 // get item to find with mode and filter
 app.get('/api/item-to-find/:mode/:filter?', (req, res) => {
     const { mode, filter } = req.params;
