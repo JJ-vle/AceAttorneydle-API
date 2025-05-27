@@ -113,6 +113,10 @@ let gamePriority = {
     case: ["Main", "Investigation", "Great"]
 };
 
+const forcedCharactersPerGroup = {
+    Investigation: ["Miles Edgeworth", "Dick Gumshoe", "Maggey Byrde", "Franziska von Karma", "Mike Meekins", "Ema Skye", "Wendy Oldbag", "Manfred von Karma", "Judge", "Larry Butz", " Shelly de Killer", "Frank Sahwit", "Regina Berry", "Lotta Hart", "Penny Nichols", "Will Powers" ]
+};
+
 ///////////////////// DATABASE FUNCTIONS
 
 // Sauvegarde les files d'attente dans MongoDB en supprimant l'ancienne version avant
@@ -231,16 +235,40 @@ function shuffleArray(array) {
         [array[i], array[j]] = [array[j], array[i]];
     }
 }
+function filterByGroup(data, group, isCase = false) {
+    const forcedNames = forcedCharactersPerGroup[group] || [];
 
-function filterByGroup(data, group, cases) {
-    if(cases){
-        return data.filter(item => getGroupByTurnabout(item.name) === group);
+    let filtered = data.filter(item => {
+        const valueToCheck = isCase ? item.name : item.debut;
+        return getGroupByTurnabout(valueToCheck) === group;
+    });
+
+    // Ajouter les personnages forcés s’ils ne sont pas déjà inclus
+    if (!isCase && forcedNames.length > 0) {
+        forcedNames.forEach(name => {
+            const found = data.find(c => c.name === name);
+            if (found && !filtered.some(c => c.name === name)) {
+                filtered.push(found);
+                //console.log(`🔁 [${group}] Ajout forcé : ${name}`);
+            }
+        });
     }
-    return data.filter(item => getGroupByTurnabout(item.debut) === group);
+
+    return filtered;
 }
-function filterQuoteByGroup(data, group) {
-    return data.filter(item => getGroupByTurnabout(item.source) === group);
+
+function filterQuoteByGroup(quotes, group) {
+    const charactersInGroup = filterByGroup(characterData, group);
+
+    const validCharacterNames = charactersInGroup.map(c => c.name);
+    const validFrenchNames = charactersInGroup.flatMap(c => Array.isArray(c.french) ? c.french : []);
+
+    return quotes.filter(quote => {
+        const speaker = quote.speaker;
+        return validCharacterNames.includes(speaker) || validFrenchNames.includes(speaker);
+    });
 }
+
 function getGroupByTurnabout(turnabout) {
     for (let group in turnaboutGames) {
         for (let game in turnaboutGames[group]) {
