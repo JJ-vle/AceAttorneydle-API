@@ -85,6 +85,18 @@ function validateListCases(data) {
     return data.filter(turnabout => isValidCase(turnabout));
 }
 
+function validateQuotes(data, characters) {
+    const validNames = new Set(characters.map(char => char.name.toLowerCase()));
+    return data.filter(quote => {
+        const valid = quote.speaker && validNames.has(quote.speaker.toLowerCase());
+        if (!valid) {
+            console.warn("❌ Speaker non trouvé :", quote.speaker);
+        }
+        return valid;
+    });
+}
+
+
 ///////////////////// LOAD DATA
 
 // Charger les fichiers JSON
@@ -328,8 +340,14 @@ async function rotateQueues() {
                     gameQueues[mode][group] = validateListCases(filterByGroup(casesData, group, true));
                 } else if (mode === "quote") {
                     const rawQuotes = filterQuoteByGroup(quoteData, group);
-                    gameQueues[mode][group] = validateAndFixQuotes(rawQuotes, characterData);
-                }  else {
+                    const validatedQuotes = validateAndFixQuotes(rawQuotes, characterData);
+                    gameQueues[mode][group] = ensureFirstQuoteValid(gameQueues[mode][group], characterData);
+
+                    if (gameQueues[mode][group].length === 0) {
+                        gameQueues[mode][group] = validatedQuotes;
+                        shuffleArray(gameQueues[mode][group]);
+                    }
+                } else {
                     gameQueues[mode][group] = validateListCharacters(filterByGroup(characterData, group), mode);
                 }
                 shuffleArray(gameQueues[mode][group]);
@@ -339,6 +357,19 @@ async function rotateQueues() {
     });
     await saveQueuesToDB();
     console.log("🔄 Rotation des files d'attente effectuée.");
+}
+
+function ensureFirstQuoteValid(queue, characterData) {
+    while (queue.length > 0) {
+        const quote = queue[0];
+        const isValid = characterData.some(char =>
+            char.name.toLowerCase() === quote.speaker.toLowerCase() ||
+            (Array.isArray(char.french) && char.french.some(fr => fr.toLowerCase() === quote.speaker.toLowerCase()))
+        );
+        if (isValid) break;
+        queue.shift();
+    }
+    return queue;
 }
 
 
