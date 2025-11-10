@@ -15,8 +15,8 @@ app.use(bodyParser.json());
 mongoose.connect(process.env.MONGO_URI, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
-}).then(() => console.log("✅ Connecté à MongoDB"))
-  .catch(err => console.error("❌ Erreur de connexion à MongoDB :", err));
+}).then(() => console.log("Connecté à MongoDB"))
+  .catch(err => console.error("Erreur de connexion à MongoDB :", err));
 
 ///////////////////// MONGO DB SCHEMAS
 
@@ -90,12 +90,11 @@ function validateQuotes(data, characters) {
     return data.filter(quote => {
         const valid = quote.speaker && validNames.has(quote.speaker.toLowerCase());
         if (!valid) {
-            console.warn("❌ Speaker non trouvé :", quote.speaker);
+            console.warn("Speaker non trouvé :", quote.speaker);
         }
         return valid;
     });
 }
-
 
 ///////////////////// LOAD DATA
 
@@ -142,9 +141,9 @@ async function saveQueuesToDB() {
         });
 
         await newQueueData.save();
-        console.log("✅ Files d'attente sauvegardées dans MongoDB.");
+        console.log("Files d'attente sauvegardées dans MongoDB.");
     } catch (error) {
-        console.error("❌ Erreur lors de la sauvegarde des files d'attente :", error);
+        console.error("Erreur lors de la sauvegarde des files d'attente :", error);
     }
 }
 
@@ -168,7 +167,7 @@ async function loadQueuesFromDB() {
                     }
 
                     if (!Array.isArray(gameQueues[mode][group]) || gameQueues[mode][group].length === 0) {
-                        console.log(`⚠️ File vide ou absente détectée : ${mode} > ${group} → Reconstruction...`);
+                        console.log(`File vide ou absente détectée : ${mode} > ${group} → Reconstruction...`);
                         
                         // Reconstruction ciblée
                         if (mode === "case") {
@@ -192,7 +191,7 @@ async function loadQueuesFromDB() {
         }
 
     } catch (error) {
-        console.error("❌ Erreur lors du chargement des files d'attente :", error);
+        console.error("Erreur lors du chargement des files d'attente :", error);
     }
 }
 
@@ -210,9 +209,9 @@ async function savePrioritiesToDB() {
         });
 
         await newPriorityData.save();
-        console.log("✅ Priorités sauvegardées dans MongoDB.");
+        console.log("Priorités sauvegardées dans MongoDB.");
     } catch (error) {
-        console.error("❌ Erreur lors de la sauvegarde des priorités :", error);
+        console.error("Erreur lors de la sauvegarde des priorités :", error);
     }
 }
 
@@ -226,7 +225,7 @@ async function loadPrioritiesFromDB() {
             savePrioritiesToDB();
         }
     } catch (error) {
-        console.error("❌ Erreur lors du chargement des priorités :", error);
+        console.error("Erreur lors du chargement des priorités :", error);
     }
 }
 
@@ -241,6 +240,15 @@ function shufflePriorities() {
 
     savePrioritiesToDB();
 }
+function shuffleEvidenceInCases(casesArray) {
+    casesArray.forEach(turnabout => {
+        if (Array.isArray(turnabout.evidence)) {
+            shuffleArray(turnabout.evidence);
+        }
+    });
+    return casesArray;
+}
+
 function shuffleArray(array) {
     for (let i = array.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -261,7 +269,7 @@ function filterByGroup(data, group, isCase = false) {
             const found = data.find(c => c.name === name);
             if (found && !filtered.some(c => c.name === name)) {
                 filtered.push(found);
-                //console.log(`🔁 [${group}] Ajout forcé : ${name}`);
+                //console.log(`[${group}] Ajout forcé : ${name}`);
             }
         });
     }
@@ -318,11 +326,13 @@ function initializeQueues() {
         shuffleArray(gameQueues.quote[group]);
 
         // case
-        gameQueues.case[group] = validateListCases(filterByGroup(casesData, group, true));
-        shuffleArray(gameQueues.case[group]);
+        let groupCases = validateListCases(filterByGroup(casesData, group, true));
+        groupCases = shuffleEvidenceInCases(groupCases);
+        gameQueues.case[group] = groupCases;
+
     });
 
-    console.log("✅ Files d'attente initialisées et mélangées.");
+    console.log("Files d'attente initialisées et mélangées.");
     shufflePriorities();
 }
 //initializeQueues();
@@ -337,7 +347,10 @@ async function rotateQueues() {
             }
             if (gameQueues[mode][group].length === 0) {
                 if (mode === "case") {
-                    gameQueues[mode][group] = validateListCases(filterByGroup(casesData, group, true));
+                    let rebuiltCases = validateListCases(filterByGroup(casesData, group, true));
+                    rebuiltCases = shuffleEvidenceInCases(rebuiltCases);
+                    gameQueues[mode][group] = rebuiltCases;
+
                 } else if (mode === "quote") {
                     const rawQuotes = filterQuoteByGroup(quoteData, group);
                     const validatedQuotes = validateAndFixQuotes(rawQuotes, characterData);
@@ -356,7 +369,7 @@ async function rotateQueues() {
         });
     });
     await saveQueuesToDB();
-    console.log("🔄 Rotation des files d'attente effectuée.");
+    console.log("Rotation des files d'attente effectuée.");
 }
 
 function ensureFirstQuoteValid(queue, characterData) {
@@ -476,7 +489,7 @@ app.get('/api/character/:name', (req, res) => {
     const character = characterData.find(char => char.name.toLowerCase() === name.toLowerCase());
 
     if (!character) {
-        console.error("❌ Personnage non trouvé :", name);
+        console.error("Personnage non trouvé :", name);
         return res.status(404).json({ error: "Personnage non trouvé" });
     }
 
