@@ -15,8 +15,8 @@ app.use(bodyParser.json());
 mongoose.connect(process.env.MONGO_URI, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
-}).then(() => console.log("✅ Connecté à MongoDB"))
-  .catch(err => console.error("❌ Erreur de connexion à MongoDB :", err));
+}).then(() => console.log("Connecté à MongoDB"))
+  .catch(err => console.error("Erreur de connexion à MongoDB :", err));
 
 ///////////////////// MONGO DB SCHEMAS
 
@@ -90,7 +90,7 @@ function validateQuotes(data, characters) {
     return data.filter(quote => {
         const valid = quote.speaker && validNames.has(quote.speaker.toLowerCase());
         if (!valid) {
-            console.warn("❌ Speaker non trouvé :", quote.speaker);
+            console.warn("Speaker non trouvé :", quote.speaker);
         }
         return valid;
     });
@@ -142,9 +142,9 @@ async function saveQueuesToDB() {
         });
 
         await newQueueData.save();
-        console.log("✅ Files d'attente sauvegardées dans MongoDB.");
+        console.log("Files d'attente sauvegardées dans MongoDB.");
     } catch (error) {
-        console.error("❌ Erreur lors de la sauvegarde des files d'attente :", error);
+        console.error("Erreur lors de la sauvegarde des files d'attente :", error);
     }
 }
 
@@ -168,7 +168,7 @@ async function loadQueuesFromDB() {
                     }
 
                     if (!Array.isArray(gameQueues[mode][group]) || gameQueues[mode][group].length === 0) {
-                        console.log(`⚠️ File vide ou absente détectée : ${mode} > ${group} → Reconstruction...`);
+                        console.log(`File vide ou absente détectée : ${mode} > ${group} → Reconstruction...`);
                         
                         // Reconstruction ciblée
                         if (mode === "case") {
@@ -186,16 +186,15 @@ async function loadQueuesFromDB() {
 
             await saveQueuesToDB(); // Sauvegarde l’état mis à jour
         } else {
-            console.log("🆕 Aucune file trouvée, initialisation complète.");
+            console.log("Aucune file trouvée, initialisation complète.");
             initializeQueues();
             saveQueuesToDB();
         }
 
     } catch (error) {
-        console.error("❌ Erreur lors du chargement des files d'attente :", error);
+        console.error("Erreur lors du chargement des files d'attente :", error);
     }
 }
-
 loadQueuesFromDB();
 
 // Sauvegarde des priorités dans MongoDB
@@ -210,9 +209,9 @@ async function savePrioritiesToDB() {
         });
 
         await newPriorityData.save();
-        console.log("✅ Priorités sauvegardées dans MongoDB.");
+        console.log("Priorités sauvegardées dans MongoDB.");
     } catch (error) {
-        console.error("❌ Erreur lors de la sauvegarde des priorités :", error);
+        console.error("Erreur lors de la sauvegarde des priorités :", error);
     }
 }
 
@@ -226,10 +225,9 @@ async function loadPrioritiesFromDB() {
             savePrioritiesToDB();
         }
     } catch (error) {
-        console.error("❌ Erreur lors du chargement des priorités :", error);
+        console.error("Erreur lors du chargement des priorités :", error);
     }
 }
-
 loadPrioritiesFromDB();
 
 ///////////////////// 
@@ -261,7 +259,7 @@ function filterByGroup(data, group, isCase = false) {
             const found = data.find(c => c.name === name);
             if (found && !filtered.some(c => c.name === name)) {
                 filtered.push(found);
-                //console.log(`🔁 [${group}] Ajout forcé : ${name}`);
+                //console.log(`[${group}] Ajout forcé : ${name}`);
             }
         });
     }
@@ -322,83 +320,95 @@ function initializeQueues() {
         shuffleArray(gameQueues.case[group]);
     });
 
-    console.log("✅ Files d'attente initialisées et mélangées.");
+    console.log("Files d'attente initialisées et mélangées.");
     shufflePriorities();
 }
 //initializeQueues();
 
-// Modifier rotateQueues pour sauvegarder les données
 async function rotateQueues() {
     shufflePriorities();
+
     Object.keys(gameQueues).forEach(mode => {
         Object.keys(gameQueues[mode]).forEach(group => {
-            if (gameQueues[mode][group].length > 0) {
+
+            // Consommer l’item courant
+            if (gameQueues[mode][group]?.length > 0) {
                 gameQueues[mode][group].shift();
             }
-            if (gameQueues[mode][group].length === 0) {
-                if (mode === "case") {
-                    gameQueues[mode][group] = validateListCases(filterByGroup(casesData, group, true));
-                } else if (mode === "quote") {
-                    const rawQuotes = filterQuoteByGroup(quoteData, group);
-                    const validatedQuotes = validateAndFixQuotes(rawQuotes, characterData);
-                    gameQueues[mode][group] = ensureFirstQuoteValid(gameQueues[mode][group], characterData);
 
-                    if (gameQueues[mode][group].length === 0) {
-                        gameQueues[mode][group] = validatedQuotes;
-                        shuffleArray(gameQueues[mode][group]);
-                    }
+            // Reconstruction si vide
+            if (!gameQueues[mode][group] || gameQueues[mode][group].length === 0) {
+
+                if (mode === "case") {
+                    gameQueues[mode][group] =
+                        validateListCases(filterByGroup(casesData, group, true));
+                } else if (mode === "quote") {
+                    gameQueues[mode][group] =
+                        buildValidatedQuoteQueue(group);
                 } else {
-                    gameQueues[mode][group] = validateListCharacters(filterByGroup(characterData, group), mode);
+                    gameQueues[mode][group] =
+                        validateListCharacters(
+                            filterByGroup(characterData, group),
+                            mode
+                        );
                 }
+
                 shuffleArray(gameQueues[mode][group]);
             }
-            
+
+            // Sécurité absolue pour les quotes
+            if (mode === "quote") {
+                gameQueues[mode][group] =
+                    validateAndFixQuotes(gameQueues[mode][group], characterData);
+            }
         });
     });
+
     await saveQueuesToDB();
-    console.log("🔄 Rotation des files d'attente effectuée.");
+    console.log("Rotation des files d'attente effectuée.");
 }
 
-function ensureFirstQuoteValid(queue, characterData) {
-    while (queue.length > 0) {
-        const quote = queue[0];
-        const isValid = characterData.some(char =>
-            char.name.toLowerCase() === quote.speaker.toLowerCase() ||
-            (Array.isArray(char.french) && char.french.some(fr => fr.toLowerCase() === quote.speaker.toLowerCase()))
-        );
-        if (isValid) break;
-        queue.shift();
-    }
-    return queue;
-}
-
-
-// Supprime le premier élément toutes les 5 minutes
-//setInterval(rotateQueues, 5 * 60 * 1000);
 
 ////////// QUOTE VERIF
 
+function buildValidatedQuoteQueue(group) {
+    const rawQuotes = filterQuoteByGroup(quoteData, group);
+    const validatedQuotes = validateAndFixQuotes(rawQuotes, characterData);
+    shuffleArray(validatedQuotes);
+    return validatedQuotes;
+}
+
 function validateAndFixQuotes(quotes, characters) {
-    return quotes.filter(quote => {
-        const speakerName = quote.speaker;
+    return quotes.reduce((acc, quote) => {
+        if (!quote?.speaker) return acc;
+
+        const speakerLower = quote.speaker.toLowerCase();
 
         // Recherche du personnage par nom exact (anglais)
-        const exactMatch = characters.find(char => char.name.toLowerCase() === speakerName.toLowerCase());
-        if (exactMatch) return true;
+        const exact = characters.find(
+            c => c.name.toLowerCase() === speakerLower
+        );
+        if (exact) {
+            acc.push(quote);
+            return acc;
+        }
 
-        // Recherche dans les noms français
-        const frenchMatch = characters.find(char =>
-            Array.isArray(char.french) && char.french.some(fr => fr.toLowerCase() === speakerName.toLowerCase())
+        // Recherche dans les noms français (alias)
+        const french = characters.find(c =>
+            Array.isArray(c.french) &&
+            c.french.some(fr => fr.toLowerCase() === speakerLower)
         );
 
-        if (frenchMatch) {
-            quote.speaker = frenchMatch.name;
-            return true;
+        if (french) {
+            acc.push({
+                ...quote,
+                speaker: french.name
+            });
         }
 
         // Quote invalide si aucun match trouvé
-        return false;
-    });
+        return acc;
+    }, []);
 }
 
 //////////////////////////// API
@@ -470,13 +480,13 @@ app.get('/api/item-to-find/:mode/:filter?', (req, res) => {
 // get informations about a character with his name
 app.get('/api/character/:name', (req, res) => {
     const { name } = req.params;
-    console.log(`🔍 Recherche du personnage : ${name}`);
+    console.log(`Recherche du personnage : ${name}`);
 
     // Recherche du personnage dans characterData
     const character = characterData.find(char => char.name.toLowerCase() === name.toLowerCase());
 
     if (!character) {
-        console.error("❌ Personnage non trouvé :", name);
+        console.error("Personnage non trouvé :", name);
         return res.status(404).json({ error: "Personnage non trouvé" });
     }
 
@@ -541,7 +551,7 @@ const cron = require('node-cron');
 
 // Exécuter la rotation des files d'attente tous les jours à minuit
 cron.schedule('0 0 * * *', () => {
-    console.log("🌙 Minuit ! Rotation des personnages...");
+    console.log("Minuit ! Rotation des personnages...");
     rotateQueues();
 });
 */
