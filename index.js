@@ -96,7 +96,6 @@ function validateQuotes(data, characters) {
     });
 }
 
-
 ///////////////////// LOAD DATA
 
 // Charger les fichiers JSON
@@ -239,6 +238,15 @@ function shufflePriorities() {
 
     savePrioritiesToDB();
 }
+function shuffleEvidenceInCases(casesArray) {
+    casesArray.forEach(turnabout => {
+        if (Array.isArray(turnabout.evidence)) {
+            shuffleArray(turnabout.evidence);
+        }
+    });
+    return casesArray;
+}
+
 function shuffleArray(array) {
     for (let i = array.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -316,8 +324,10 @@ function initializeQueues() {
         shuffleArray(gameQueues.quote[group]);
 
         // case
-        gameQueues.case[group] = validateListCases(filterByGroup(casesData, group, true));
-        shuffleArray(gameQueues.case[group]);
+        let groupCases = validateListCases(filterByGroup(casesData, group, true));
+        groupCases = shuffleEvidenceInCases(groupCases);
+        gameQueues.case[group] = groupCases;
+
     });
 
     console.log("Files d'attente initialisées et mélangées.");
@@ -340,8 +350,10 @@ async function rotateQueues() {
             if (!gameQueues[mode][group] || gameQueues[mode][group].length === 0) {
 
                 if (mode === "case") {
-                    gameQueues[mode][group] =
-                        validateListCases(filterByGroup(casesData, group, true));
+                    let rebuiltCases = validateListCases(filterByGroup(casesData, group, true));
+                    rebuiltCases = shuffleEvidenceInCases(rebuiltCases);
+                    gameQueues[mode][group] = rebuiltCases;
+
                 } else if (mode === "quote") {
                     gameQueues[mode][group] =
                         buildValidatedQuoteQueue(group);
