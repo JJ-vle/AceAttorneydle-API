@@ -1,71 +1,86 @@
 # Ace Attorney API Server
 
-Ce projet est un serveur Node.js utilisant Express pour gérer une API liée à l'univers d'Ace Attorney. Il permet de récupérer des personnages, des citations et des affaires, et de gérer des files d'attente pour un jeu basé sur ces éléments. Cette API est utilisée dans le cadre de [AceAttorneydle](https://github.com/JJ-vle/AceAttorneydle).
+This project is a Node.js server using Express to manage an API related to the Ace Attorney universe. It allows you to retrieve characters, quotes, and cases, and to manage queues for a game based on these elements. This API is used as part of [AceAttorneydle](https://github.com/JJ-vle/AceAttorneydle).
 
-## Installation et Démarrage
+## Installation and Startup
 
-### Prérequis
-- [Node.js](https://nodejs.org/) installé sur votre machine
+### Prerequisites
 
-### Installation des dépendances
-Clonez ce dépôt et installez les dépendances avec la commande :
+* [Node.js](https://nodejs.org/) installed on your machine
+
+### Installing dependencies
+
+Clone this repository and install the dependencies with the following command:
+
 ```sh
 npm install
 ```
+> The database-based version requires access to our database, so it is recommended to use the version from the `gamequeuesfile` branch instead.
 
-### Lancement du serveur en local
+### Running the server locally
+
 ```sh
 node index.js
 ```
-Le serveur tournera par défaut sur le port `3000`, sauf si un autre port est spécifié via la variable d'environnement `PORT`.
 
-## Routes de l'API
+The server will run on port `3000` by default, unless another port is specified via the `PORT` environment variable.
 
-### Récupérer un élément à deviner
+## API Routes
+
+### Get an item to guess
+
 ```http
 GET /api/item-to-find/:mode/:filter?
 ```
-- `mode` : `guess`, `silhouette`, `quote` ou `case`
-- `filter` (optionnel) : (`Main`, `Investigation`, `Great`) Correspond aux différents groupes de jeux Ace Attorney sortis.
 
-### Récupérer les informations d'un personnage
+* `mode`: `guess`, `silhouette`, `quote`, or `case`
+* `filter` (optional): (`Main`, `Investigation`, `Great`) Corresponds to the different Ace Attorney game groups released.
+
+### Get character information
+
 ```http
 GET /api/character/:name
 ```
-- `name` : Nom du personnage (sensible à la casse et aux espaces)
 
-### Récupérer toutes les données
+* `name`: Character name (case- and space-sensitive)
+
+### Get all data
+
 ```http
-GET /api/characters   # Liste des personnages
-GET /api/quotes       # Liste des citations
-GET /api/cases        # Liste des affaires
-GET /api/turnabouts   # Liste des groupes et des jeux de chaque affaire
+GET /api/characters   # List of characters
+GET /api/quotes       # List of quotes
+GET /api/cases        # List of cases
+GET /api/turnabouts   # List of groups and games for each case
 ```
 
-## Fonctionnalités principales
-- Filtrage des personnages et affaires valides
-- Gestion de files d'attente pour le jeu
-- Rotation automatique des files toutes les 5 minutes
-- Déploiement optimisé sur Vercel
+## Main Features
 
-L'API est déjà déployée et accessible à l'adresse suivante :
+* Filtering of valid characters and cases
+* Queue management for the game
+* Automatic queue rotation every 5 minutes
+* Optimized deployment on Vercel
+
+The API is already deployed and accessible at:
 👉 [Ace Attorney API](https://ace-attorneydle-api.vercel.app/)
 
-## Structure du projet
+## Project Structure
+
 ```
 / Ace Attorney API
-├── data/                     # Données JSON (personnages, affaires, citations, etc.)
-├── index.js                  # Serveur principal
-├── package.json              # Dépendances et configuration du projet
-├── vercel.json               # Configuration pour le déploiement Vercel
+├── data/                     # JSON data (characters, cases, quotes, etc.)
+├── index.js                  # Main server file
+├── package.json              # Project dependencies and configuration
+├── vercel.json               # Vercel deployment configuration
 ```
 
-## Technologies utilisées
-- Node.js
-- Express
-- CORS
-- Body-parser
-- Vercel (pour le déploiement)
+## Technologies Used
 
-## Auteurs et Crédits
-Développé par [@JJ-vle](https://github.com/JJ-vle) et [@BeignetBoyy](https://github.com/BeignetBoyy).
+* Node.js
+* Express
+* CORS
+* Body-parser
+* Vercel (for deployment)
+
+## Authors and Credits
+
+Developed by [@JJ-vle](https://github.com/JJ-vle) and [@BeignetBoyy](https://github.com/BeignetBoyy).
