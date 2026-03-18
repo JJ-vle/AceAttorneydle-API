@@ -333,13 +333,19 @@ function initializeQueues() {
     console.log("Files d'attente initialisées et mélangées.");
     shufflePriorities();
 }
-//initializeQueues();
 
 async function rotateQueues() {
     shufflePriorities();
 
     Object.keys(gameQueues).forEach(mode => {
         Object.keys(gameQueues[mode]).forEach(group => {
+
+
+            // Pour les quotes : normaliser la queue et
+            //                   s'assurer que le premier élément appartient bien au groupe
+            if (mode === "quote") {
+                validateAndEnsureQuoteQueue(gameQueues[mode][group], group, characterData);
+            }
 
             // Consommer l’item courant
             if (gameQueues[mode][group]?.length > 0) {
@@ -367,19 +373,12 @@ async function rotateQueues() {
 
                 shuffleArray(gameQueues[mode][group]);
             }
-
-            // Sécurité absolue pour les quotes
-            if (mode === "quote") {
-                gameQueues[mode][group] =
-                    validateAndFixQuotes(gameQueues[mode][group], characterData);
-            }
         });
     });
 
     await saveQueuesToDB();
     console.log("Rotation des files d'attente effectuée.");
 }
-
 
 ////////// QUOTE VERIF
 
@@ -390,6 +389,7 @@ function buildValidatedQuoteQueue(group) {
     return validatedQuotes;
 }
 
+// liste de quote --> verif si speaker existe
 function validateAndFixQuotes(quotes, characters) {
     return quotes.reduce((acc, quote) => {
         if (!quote?.speaker) return acc;
@@ -401,7 +401,7 @@ function validateAndFixQuotes(quotes, characters) {
             c => c.name.toLowerCase() === speakerLower
         );
         if (exact) {
-            acc.push(quote);
+            acc.push({ ...quote, speaker: exact.name });
             return acc;
         }
 
@@ -422,6 +422,44 @@ function validateAndFixQuotes(quotes, characters) {
         return acc;
     }, []);
 }
+
+// verif que 1ere quote appartient au groupe; si aucune n'est valide, vide la queue
+function validateAndEnsureQuoteQueue(queue, group, characters) {
+    if (!Array.isArray(queue)) return;
+
+    // Normaliser et filtrer les quotes invalides
+    const normalized = validateAndFixQuotes(queue, characters);
+    queue.length = 0;
+    normalized.forEach(q => queue.push(q));
+
+    if (queue.length === 0) return;
+
+    const charactersInGroup = filterByGroup(characters, group);
+    const validNames = new Set(charactersInGroup.map(c => c.name));
+    const validFrench = new Set(charactersInGroup.flatMap(c => Array.isArray(c.french) ? c.french : []));
+
+    let attempts = 0;
+    const max = queue.length;
+    while (attempts < max) {
+        const first = queue[0];
+        if (!first || !first.speaker) {
+            queue.push(queue.shift());
+            attempts++;
+            continue;
+        }
+
+        if (validNames.has(first.speaker) || validFrench.has(first.speaker)) {
+            return; // premier élément valide pour ce groupe
+        }
+
+        queue.push(queue.shift());
+        attempts++;
+    }
+
+    // Aucune citation valide trouvée -> vider pour forcer reconstruction
+    queue.length = 0;
+}
+
 
 //////////////////////////// API
 
