@@ -370,7 +370,6 @@ async function rotateQueues() {
                             mode
                         );
                 }
-
                 shuffleArray(gameQueues[mode][group]);
             }
         });
@@ -448,8 +447,14 @@ function validateAndEnsureQuoteQueue(queue, group, characters) {
             continue;
         }
 
+        // Valide si le speaker appartient au groupe
         if (validNames.has(first.speaker) || validFrench.has(first.speaker)) {
             return; // premier élément valide pour ce groupe
+        }
+
+        // Ou si la source (turnabout) de la citation appartient au groupe
+        if (first.source && getGroupByTurnabout(first.source) === group) {
+            return; // validé par la source
         }
 
         queue.push(queue.shift());
