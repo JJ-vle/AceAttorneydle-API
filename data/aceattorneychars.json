@@ -47,7 +47,7 @@
     },
     {
         "image": [
-            "https://static.wikia.nocookie.net/aceattorney/images/b/bc/AAIC_Mugshot_Alf_Aldown.png/revision/latest?cb=20250613230459"
+            "https://static.wikia.nocookie.net/aceattorney/images/f/fe/Ryuujackhd.jpeg/revision/latest?cb=20210314231641"
         ],
         "occupation": [
             "Investigative photographer"
@@ -149,7 +149,7 @@
         "name": "Lance Amano",
         "url": "https://aceattorney.fandom.com/wiki/Lance_Amano",
         "game_url": "https://aceattorney.fandom.com/wiki/List_of_Profiles_in_Ace_Attorney_Investigations:_Miles_Edgeworth",
-        "mugshot": "https://static.wikia.nocookie.net/aceattorney/images/1/16/LanceHD.png/revision/latest?cb=20241015003238",
+        "mugshot": "https://static.wikia.nocookie.net/aceattorney/images/2/23/Unknown_Person.png/revision/latest?cb=20180128082826",
         "age": "21",
         "gender": "Male"
     },
@@ -2209,7 +2209,7 @@
     },
     {
         "image": [
-            "https://static.wikia.nocookie.net/aceattorney/images/e/ed/AAIC_Mugshot_Artie_Frost.png/revision/latest?cb=20251101153336"
+            "https://static.wikia.nocookie.net/aceattorney/images/c/c1/Hoquet_hd.jpeg/revision/latest?cb=20210314231130"
         ],
         "occupation": [
             "Sculptor",
@@ -2227,7 +2227,7 @@
         "name": "Artie Frost",
         "url": "https://aceattorney.fandom.com/wiki/Artie_Frost",
         "game_url": "https://aceattorney.fandom.com/wiki/List_of_Profiles_in_Ace_Attorney_Investigations_2:_Prosecutor%27s_Gambit",
-        "mugshot": "https://static.wikia.nocookie.net/aceattorney/images/e/ed/AAIC_Mugshot_Artie_Frost.png/revision/latest?cb=20251101153336",
+        "mugshot": "https://static.wikia.nocookie.net/aceattorney/images/c/c1/Hoquet_hd.jpeg/revision/latest?cb=20210314231130",
         "age": "38",
         "gender": "Male",
         "exception": "unusable-silhouette"
@@ -5814,7 +5814,7 @@
         "name": "Delicia Scone",
         "url": "https://aceattorney.fandom.com/wiki/Delicia_Scone",
         "game_url": "https://aceattorney.fandom.com/wiki/List_of_Profiles_in_Ace_Attorney_Investigations_2:_Prosecutor%27s_Gambit",
-        "mugshot": "https://static.wikia.nocookie.net/aceattorney/images/0/05/HDDelicia.png/revision/latest?cb=20250602202105",
+        "mugshot": "https://static.wikia.nocookie.net/aceattorney/images/2/23/Unknown_Person.png/revision/latest?cb=20180128082826",
         "age": "??",
         "gender": "Female"
     },
@@ -7006,8 +7006,7 @@
         "game_url": "https://aceattorney.fandom.com/wiki/List_of_Profiles_in_The_Great_Ace_Attorney_2:_Resolve",
         "mugshot": "https://static.wikia.nocookie.net/aceattorney/images/1/13/Everydaymittlemont.png/revision/latest?cb=20210818024305",
         "age": "40",
-        "gender": "Male",
-        "exception": "unusable"
+        "gender": "Male"
     },
     {
         "image": [
@@ -7131,7 +7130,7 @@
     },
     {
         "image": [
-            "https://static.wikia.nocookie.net/aceattorney/images/d/da/Oportrait.png/revision/latest?cb=20250614000205"
+            "https://static.wikia.nocookie.net/aceattorney/images/4/43/Di-Jun_Huang%27s_Body_Double_Mug.png/revision/latest/scale-to-width-down/350?cb=20190819043706"
         ],
         "occupation": [
             "Di-Jun Wang's body double",
@@ -7144,7 +7143,6 @@
         "french": null,
         "debut": "Turnabout Trigger",
         "name": "Di-Jun Wang (body double)",
-        "mugshot": "https://static.wikia.nocookie.net/aceattorney/images/1/1f/HDHuang.png/revision/latest?cb=20241009001718",
         "url": "https://aceattorney.fandom.com/wiki/Di-Jun_Wang_(body_double)",
         "gender": "Male"
     },
